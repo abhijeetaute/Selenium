@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0">
+
+	<info organisation="Automation" module="Testing Module"/>
+  
+	<dependencies>
+		<dependency org="org.openqa.selenium.server" name="selenium-server" rev="2.48.0">
+			<artifact name="selenium-server-standalone" type="jar" url="http://selenium-release.storage.googleapis.com/2.48/selenium-server-standalone-2.48.0.jar" />
+		</dependency>
+  		<dependency org="org.testng" name="testng" rev="6.8.8"/>
+	</dependencies>
+
+</ivy-module>

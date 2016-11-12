@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." xmlns:ivy="antlib:org.apache.ivy.ant" name="ivy" default="run-test"> 
+	
+	<property name="ivy.install.version" value="2.3.0" />
+	<property name="ivy.jar.dir" value="${ant.library.dir}" />
+	<property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
+	<property name="src.dir" value="${basedir}/src" />
+	<property name="bin.dir" value="${basedir}/bin" />
+	<property name="lib.dir" value="${basedir}/lib" />
+	<property name="config.dir" value="${basedir}/config" />
+	<property name="config.file" value="testrun_config.xml" />
+	<property name="test.results.dir" value="${basedir}/test-results" />
+	<property name="browser" value="C:\Program Files (x86)\Mozilla Firefox\firefox.exe" />
+	
+	<tstamp>
+		<format property="run.time" pattern="dd_MMM_yyyy_hh_mm_aa" />
+	</tstamp>
+	
+	<path id="seleniumautomation.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="*.jar" />
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+	
+	<target name="download-ivy" unless="skip.download" description="Downloading ivy jar file">
+		<mkdir dir="${ivy.jar.dir}" />
+		<echo message="Installing ivy..." />
+		<get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true" />
+	</target>
+	
+	<target name="install-ivy" depends="download-ivy" description="Installing ivy">
+		<path id="ivy.lib.path">
+			<fileset dir="${ivy.jar.dir}" includes="*.jar" />
+		</path>
+		<taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path" />
+	</target>
+    
+    <target name="resolve" depends="install-ivy" description="Resolving ivy dependencies">
+		<ivy:resolve/>
+		<ivy:cachepath pathid="lib.path.id" />
+		<ivy:addpath topath="seleniumautomation.classpath">	<path refid="lib.path.id" />
+		</ivy:addpath>
+	</target>
+	
+	<target name="init" depends="resolve" description="Creating bin folder and adding files">
+		<mkdir dir="bin" />
+		<copy includeemptydirs="false" todir="${bin.dir}">
+			<fileset dir="${src.dir}">
+				<exclude name="**/*.ucls" />
+				<exclude name="**/*.java" />
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="build-project" depends="init" description="Building project">
+		<echo message="Building project..." />
+		<javac debug="true" destdir="${bin.dir}" encoding="utf-8">
+			<src path="${src.dir}" />
+			<classpath refid="seleniumautomation.classpath" />
+		</javac>
+	</target>
+	
+	<target name="clean" description="Cleaning bin files">
+		<delete dir="bin" />
+		<delete file="${lib.dir}/selenium-test.jar" failonerror="false"></delete>
+	</target>
+
+	<target name="make-jar" depends="clean,build-project" description="Making jar file">
+		<jar destfile="${lib.dir}/selenium-test.jar" basedir="${bin.dir}" />
+	</target>
+		
+	<target name="run-test" depends="make-jar" description="Running test" >
+		<taskdef resource="testngtasks" classpathref="seleniumautomation.classpath" />
+		<testng classpathref="seleniumautomation.classpath" outputDir="${test.results.dir}/${run.time}" listeners="com.automation.listener.NewListener">
+			<xmlfileset dir="${config.dir}" includes="${config.file}" />
+			<sysproperty key="org.uncommons.reportng.escape-output" value="false" />
+		</testng>
+		<copydir dest="${test.results.dir}/default" src="${test.results.dir}/${run.time}"></copydir>
+		<antcall target="openReport"></antcall>
+	</target>
+	
+	<target name="openReport">
+		<exec executable="${browser}" spawn="yes">
+			<arg line="\${test.results.dir}\${run.time}\html\index.html" />
+		</exec>
+	</target>
+	
+</project>
